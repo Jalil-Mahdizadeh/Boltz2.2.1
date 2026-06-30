@@ -140,3 +140,32 @@ A tiny local smoke test was run on this machine without writing outputs to the r
 - GPU speedup: about `9.9x`.
 
 This test confirms that the laptop GPU can run a very small Boltz2 job, but it does not prove that the full 495-residue NusA examples will fit in 8 GB VRAM.
+
+## Laptop GPU Length Boundary
+
+The maximum confirmed successful GPU prediction length on this laptop was measured with a synthetic single-chain protein and the same conservative benchmark settings:
+
+- `msa: empty`
+- `--accelerator gpu`
+- `--devices 1`
+- `--diffusion_samples 1`
+- `--recycling_steps 1`
+- `--sampling_steps 5`
+- `--max_parallel_samples 1`
+- `--num_workers 0`
+- `--no_kernels`
+- `--output_format pdb`
+
+Results on the NVIDIA RTX PRO 2000 Blackwell Generation Laptop GPU with 8151 MiB VRAM:
+
+| Sequence length | Result | Elapsed time |
+|---:|---|---:|
+| 100 aa | Success | `72.222 s` |
+| 300 aa | Success | `72.338 s` |
+| 500 aa | Success | `90.550 s` |
+| 700 aa | Success | `131.974 s` |
+| 750 aa | Failed: CUDA driver `device not ready` | `137.883 s` before failure |
+| 800 aa | Failed: CUDA driver `device not ready` | `160.515 s` before failure |
+| 900 aa | Failed: CUDA driver `device not ready` | `61.546 s` before failure |
+
+For this laptop, treat `700 aa` as the largest confirmed working length for minimal GPU testing. This is not a general production limit: real inputs with MSAs, higher `sampling_steps`, more `diffusion_samples`, more `recycling_steps`, `--use_potentials`, or parallel sampling can require substantially more VRAM. The default `run.sh` settings are much heavier than this benchmark.

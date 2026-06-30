@@ -28,6 +28,8 @@ For a safer first run on an 8 GB GPU, edit `run.sh` manually:
 --max_parallel_samples 1
 ```
 
+On the tested NVIDIA RTX PRO 2000 Blackwell laptop GPU with 8151 MiB VRAM, the largest confirmed successful minimal GPU test was a synthetic 700 amino-acid single-chain input with `msa: empty`, `diffusion_samples=1`, `recycling_steps=1`, `sampling_steps=5`, and `max_parallel_samples=1`. Lengths of 750 amino acids and above failed with a CUDA driver `device not ready` error under the same test settings. Treat this as a laptop-specific safety boundary, not a general Boltz limit.
+
 ## Build input
 
 The Docker build expects a local `.boltz/` folder next to the Dockerfile. It must contain:
