@@ -169,3 +169,33 @@ Results on the NVIDIA RTX PRO 2000 Blackwell Generation Laptop GPU with 8151 MiB
 | 900 aa | Failed: CUDA driver `device not ready` | `61.546 s` before failure |
 
 For this laptop, treat `700 aa` as the largest confirmed working length for minimal GPU testing. This is not a general production limit: real inputs with MSAs, higher `sampling_steps`, more `diffusion_samples`, more `recycling_steps`, `--use_potentials`, or parallel sampling can require substantially more VRAM. The default `run.sh` settings are much heavier than this benchmark.
+
+## Real NusA GPU Ladder
+
+The real 495-residue `NusA_open.yaml` sequence was tested on the same laptop GPU. All runs used `--accelerator gpu`, `--devices 1`, `--no_kernels`, `--max_parallel_samples 1`, `--num_workers 0`, and disposable output directories inside the container.
+
+| Step | Key settings | Result | Elapsed time |
+|---|---|---|---:|
+| Minimal single-sequence | `msa: empty`, `diffusion_samples=1`, `recycling_steps=1`, `sampling_steps=5` | Success | `83.473 s` |
+| Enable full local MSA | local MSA, default `max_msa_seqs=8192`, `num_subsampled_msa=1024` | Failed in MSA module: CUDA driver `device not ready` | `66.852 s` before failure |
+| Cap MSA to 128 | `max_msa_seqs=128`, `num_subsampled_msa=128` | Success | `94.789 s` |
+| Cap MSA to 256 | `max_msa_seqs=256`, `num_subsampled_msa=256` | Success | `94.137 s` |
+| Cap MSA to 512 | `max_msa_seqs=512`, `num_subsampled_msa=512` | Success | `86.743 s` |
+| Cap MSA to 768 | `max_msa_seqs=768`, `num_subsampled_msa=768` | Success | `86.845 s` |
+| Cap MSA to 1024 | `max_msa_seqs=1024`, `num_subsampled_msa=1024` | Success | `91.458 s` |
+| Increase sampling | capped MSA 1024, `sampling_steps=50` | Success | `93.239 s` |
+| Default sampling | capped MSA 1024, `sampling_steps=200` | Success | `106.235 s` |
+| Default recycling | capped MSA 1024, `recycling_steps=3`, `sampling_steps=200` | Success | `149.053 s` |
+| High recycling | capped MSA 1024, `recycling_steps=10`, `sampling_steps=200` | Success | `241.689 s` |
+| Add potentials | capped MSA 1024, `recycling_steps=10`, `sampling_steps=200`, `--use_potentials` | Success | `298.748 s` |
+| Two serial samples | previous settings plus `diffusion_samples=2` | Success | `366.732 s` |
+
+For this laptop, the first practical failure was not the 495-residue sequence length itself. It was allowing Boltz to ingest up to the default `max_msa_seqs=8192` MSA sequences. For NusA on this 8 GB GPU, add these flags when using an MSA:
+
+```bash
+--max_msa_seqs 1024
+--num_subsampled_msa 1024
+--max_parallel_samples 1
+```
+
+The original heavier 20-sample setting was not run end-to-end. With `max_parallel_samples=1`, additional diffusion samples are expected to increase runtime substantially while keeping peak VRAM closer to the one-sample case, but this was only verified up to `diffusion_samples=2`.
